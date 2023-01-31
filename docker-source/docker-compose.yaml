@@ -1,0 +1,37 @@
+version: '3.5'
+
+volumes:
+  certificates:
+
+services:
+  cert:
+    container_name: data-transfer-ssl
+    image: eosc/data-transfer-ssl:latest
+    build:
+      context: cert/
+      args:
+        - SERVICE_URL=http://api:8080
+        - SERVICE_DOMAIN=${SERVICE_DOMAIN}
+        - SERVICE_EMAIL=${SERVICE_EMAIL}
+    links:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - certificates:/etc/letsencrypt
+    healthcheck:
+      test: [ 'CMD', '/opt/status.sh' ]
+      start_period: 30s
+      interval: 1m
+      timeout: 5s
+    restart: unless-stopped
+
+  api:
+    container_name: data-transfer-api
+    image: eosc/data-transfer-api:latest
+    build:
+      context: data-transfer/
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
